@@ -1,4 +1,3 @@
-{# templates/calendar/index.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Calendar{% endblock %}
@@ -6,43 +5,55 @@
 {% block body %}
     <h2>Select a Day and Time for Your Appointment</h2>
 
-    {# Render the calendar here with available days and times #}
-    <div id="calendar">
-        {# Implement the calendar display logic #}
-       <table>
-            <thead>
-                <tr>
-                    <th>Sun</th>
-                    <th>Mon</th>
-                    <th>Tue</th>
-                    <th>Wed</th>
-                    <th>Thu</th>
-                    <th>Fri</th>
-                    <th>Sat</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for week in calendar %}
-                    <tr>
-                        {% for day in week %}
-                            <td {% if day.isToday %}style="background-color: yellow;"{% endif %}>
-                                {% if day.isCurrentMonth %}
-                                    {{ day.date|date('j') }}
-                                    {% if day.available %}
-                                        <a href="{{ path('appointment_new', { date: day.date|date('Y-m-d') }) }}">Book</a>
-                                    {% else %}
-                                        Unavailable
-                                    {% endif %}
-                                {% else %}
-                                    <!-- Days from previous/next month -->
-                                    <span style="color: #ccc;">{{ day.date|date('j') }}</span>
-                                {% endif %}
-                            </td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div id="calendar"></div>
+{% endblock %}
 
-    </div>
+{% block javascripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+
+            var eventsArray = [
+                {% for day in calendar %}
+                    {% for slot in day.timeSlots %}
+                        {
+                            title: '{{ slot.available ? "Available" : "Booked" }}',
+                            start: '{{ slot.time|date("Y-m-d\\TH:i:s") }}',  // Correct date format
+                            url: '{{ slot.available ? path('appointment_new', { date: day.date|date('Y-m-d'), time: slot.time|date('H:i') })|raw : "#" }}',
+                            color: '{{ slot.available ? "green" : "red" }}',
+                            editable: false,
+                            durationEditable: false
+                        }{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                    {% if not loop.last %},{% endif %}
+                {% endfor %}
+            ];
+
+            console.log(eventsArray); // Debugging: Check the final array
+
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'timeGridDay,timeGridWeek,dayGridMonth'
+                },
+                timeZone: 'local',
+                events: eventsArray,
+                slotDuration: '01:00:00', // Each slot represents 1 hour
+                allDaySlot: false, // Disable the all-day slot
+                selectable: true, // Allow selecting time slots
+                eventClick: function(info) {
+                    console.log("Event clicked:", info.event); // Debugging line
+                    if (info.event.url) {
+                        console.log("Navigating to:", info.event.url); // Debugging line
+                        window.location.href = info.event.url;
+                    }
+                    info.jsEvent.preventDefault(); // Prevent default behavior
+                }
+            });
+
+            calendar.render();
+        });
+    </script>
 {% endblock %}

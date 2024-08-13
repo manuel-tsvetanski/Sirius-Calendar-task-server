@@ -17,7 +17,7 @@ class Appointment
     #[ORM\Column(type: 'time')]
     private $time;
 
-    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\ManyToOne(targetEntity: User::class, cascade: ["persist"])]
     #[ORM\JoinColumn(nullable: false)]
     private $user;
 
@@ -34,10 +34,9 @@ class Appointment
     }
 
     // Setter for date
-    public function setDate(\DateTimeInterface $date): self
+    public function setDate(\DateTime $date): self
     {
-        $this->date = $date;
-
+        $this->date = $date; // or whatever field name is appropriate
         return $this;
     }
 

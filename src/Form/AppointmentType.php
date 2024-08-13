@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Form;
 
 use App\Entity\Appointment;
@@ -17,9 +16,13 @@ class AppointmentType extends AbstractType
         $builder
             ->add('date', DateType::class, [
                 'widget' => 'single_text',
+                'input' => 'datetime',  // Ensure this is mapped to a DateTime object
+                'html5' => true,
             ])
             ->add('time', TimeType::class, [
                 'widget' => 'single_text',
+                'input' => 'datetime',  // Ensure this is mapped to a DateTime object
+                'html5' => true,
             ])
             ->add('user', UserType::class);
     }

@@ -4,15 +4,15 @@
 {% block title %}Book Appointment{% endblock %}
 
 {% block body %}
-    <h2>Book an Appointment</h2>
+    <h2 class="mb-4">Book an Appointment</h2>
 
-    {{ form_start(form) }}
+    {{ form_start(form, {'attr': {'class': 'form-horizontal'}}) }}
     {{ form_widget(form) }}
-    <button type="submit" class="btn btn-primary">Book Appointment</button>
+    <button type="submit" class="btn btn-primary mt-3">Book Appointment</button>
     {{ form_end(form) }}
 
     {% if app.session.flashBag.has('success') %}
-        <div class="alert alert-success">
+        <div class="alert alert-success mt-4">
             {{ app.session.flashBag.get('success')[0] }}
         </div>
     {% endif %}
