@@ -1,0 +1,48 @@
+{# templates/calendar/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Calendar{% endblock %}
+
+{% block body %}
+    <h2>Select a Day and Time for Your Appointment</h2>
+
+    {# Render the calendar here with available days and times #}
+    <div id="calendar">
+        {# Implement the calendar display logic #}
+       <table>
+            <thead>
+                <tr>
+                    <th>Sun</th>
+                    <th>Mon</th>
+                    <th>Tue</th>
+                    <th>Wed</th>
+                    <th>Thu</th>
+                    <th>Fri</th>
+                    <th>Sat</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for week in calendar %}
+                    <tr>
+                        {% for day in week %}
+                            <td {% if day.isToday %}style="background-color: yellow;"{% endif %}>
+                                {% if day.isCurrentMonth %}
+                                    {{ day.date|date('j') }}
+                                    {% if day.available %}
+                                        <a href="{{ path('appointment_new', { date: day.date|date('Y-m-d') }) }}">Book</a>
+                                    {% else %}
+                                        Unavailable
+                                    {% endif %}
+                                {% else %}
+                                    <!-- Days from previous/next month -->
+                                    <span style="color: #ccc;">{{ day.date|date('j') }}</span>
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+{% endblock %}

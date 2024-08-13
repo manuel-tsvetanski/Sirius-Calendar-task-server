@@ -1,0 +1,19 @@
+{# templates/appointment/new.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Book Appointment{% endblock %}
+
+{% block body %}
+    <h2>Book an Appointment</h2>
+
+    {{ form_start(form) }}
+    {{ form_widget(form) }}
+    <button type="submit" class="btn btn-primary">Book Appointment</button>
+    {{ form_end(form) }}
+
+    {% if app.session.flashBag.has('success') %}
+        <div class="alert alert-success">
+            {{ app.session.flashBag.get('success')[0] }}
+        </div>
+    {% endif %}
+{% endblock %}

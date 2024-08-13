@@ -1,10 +1,6 @@
 #!/usr/bin/env php
 <?php
 
-if (!ini_get('date.timezone')) {
-    ini_set('date.timezone', 'UTC');
-}
-
 if (is_file(dirname(__DIR__).'/vendor/phpunit/phpunit/phpunit')) {
     if (PHP_VERSION_ID >= 80000) {
         require dirname(__DIR__).'/vendor/phpunit/phpunit/phpunit';
