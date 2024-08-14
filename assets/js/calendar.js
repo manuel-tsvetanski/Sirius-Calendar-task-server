@@ -3,22 +3,32 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import bootstrapPlugin from '@fullcalendar/bootstrap';
 
-// Correct FullCalendar CSS imports
-import '@fullcalendar/daygrid/main.css'; // DayGrid plugin styles
-import '@fullcalendar/timegrid/main.css'; // TimeGrid plugin styles
-import '@fullcalendar/bootstrap/main.css'; // Bootstrap plugin styles
-
-import 'bootstrap/dist/css/bootstrap.min.css'; // Bootstrap CSS
-
-// Your custom calendar logic
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('test');
     var calendarEl = document.getElementById('calendar');
-    console.log('calendarEl:', calendarEl);
 
     if (calendarEl) {
-        var eventsArray = JSON.parse(document.getElementById('calendar-data').textContent);
-        console.log('eventsArray:', eventsArray);
+        var calendarData = JSON.parse(document.getElementById('calendar-data').textContent);
+        var eventsArray = [];
+
+        calendarData.forEach(day => {
+            day.timeSlots.forEach(slot => {
+                eventsArray.push({
+                    title: slot.available ? 'Available' : 'Booked',
+                    start: slot.time.date,
+                    color: slot.available ? 'green' : 'red',
+                    editable: false,
+                    durationEditable: false,
+                    url: slot.available ? `/appointment/new?date=${day.date.date}&time=${slot.time.date}` : '#', // Assign the correct URL here
+                    extendedProps: {
+                        user: slot.user ? {
+                            name: slot.user.name,
+                            email: slot.user.email,
+                            appointmentId: slot.appointmentId,
+                        } : null,
+                    },
+                });
+            });
+        });
 
         var calendar = new Calendar(calendarEl, {
             plugins: [dayGridPlugin, timeGridPlugin, bootstrapPlugin],
@@ -37,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
                 var modalBody = document.getElementById('modalEventDetailsBody');
 
-                if (info.event.url === '#') {
+                if (info.event.extendedProps.user && info.event.url === '#') {
                     var user = info.event.extendedProps.user;
                     var userInfo = user ? `<p><strong>Name:</strong> ${user.name}</p><p><strong>Email:</strong> ${user.email}</p>` : '<p>No user details available</p>';
 
@@ -56,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             showDeleteConfirmation(appointmentId);
                         });
                     }
-                } else {
+                } else if (info.event.url && info.event.url !== '#') {
                     loadFormIntoModal(info.event.url, modal, modalBody);
                 }
 
@@ -150,8 +160,6 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmationModal.show();
 
         document.getElementById('confirmDelete').addEventListener('click', function() {
-            console.log('Delete appointment with ID:', appointmentId);
-
             fetch(`/appointment/delete/${appointmentId}`, {
                     method: 'DELETE',
                     headers: {
