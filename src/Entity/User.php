@@ -1,8 +1,9 @@
 <?php
-
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use App\Validator\Constraints as CustomAssert;
 
 #[ORM\Entity]
 class User
@@ -13,12 +14,32 @@ class User
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
+    #[Assert\NotBlank(message: "Name is required")]
+    #[Assert\Length(
+        max: 255,
+        maxMessage: "Name cannot be longer than {{ limit }} characters"
+    )]
     private $name;
 
     #[ORM\Column(type: 'string', length: 255, unique: true)]
+    #[Assert\NotBlank(message: "Email is required")]
+    #[Assert\Email(
+        message: "Please enter a valid email address: {{ value }}",
+        mode: 'strict', // Strict mode according to RFC 5322,
+    )]
+    #[Assert\Regex(
+        pattern: "/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/",
+        message: "Please enter a valid email address: {{ value }}"
+    )]
+    #[CustomAssert\ValidEmailDomain]
     private $email;
 
     #[ORM\Column(type: 'string', length: 20)]
+    #[Assert\NotBlank(message: "Phone number is required")]
+    #[Assert\Regex(
+        pattern: "/^\+?[0-9\s\-]+$/",
+        message: "Please enter a valid phone number"
+    )]
     private $phone;
 
     // Getter for id
@@ -69,5 +90,3 @@ class User
         return $this;
     }
 }
-
-
