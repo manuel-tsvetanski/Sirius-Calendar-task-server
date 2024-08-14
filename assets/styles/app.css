@@ -1,0 +1,16 @@
+body {
+    background-color: lightgray;
+}
+
+.form-error {
+    color: red;
+    font-weight: bold;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-control {
+    margin-top: 0.5rem;
+}
