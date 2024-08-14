@@ -4,8 +4,7 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-class Appointment
-{
+class Appointment {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -22,47 +21,40 @@ class Appointment
     private $user;
 
     // Getter for id
-    public function getId(): ?int
-    {
+    public function getId(): ?int {
         return $this->id;
     }
 
     // Getter for date
-    public function getDate(): ?\DateTimeInterface
-    {
+    public function getDate(): ?\DateTimeInterface {
         return $this->date;
     }
 
     // Setter for date
-    public function setDate(\DateTime $date): self
-    {
+    public function setDate(\DateTime $date): self {
         $this->date = $date; // or whatever field name is appropriate
         return $this;
     }
 
     // Getter for time
-    public function getTime(): ?\DateTimeInterface
-    {
+    public function getTime(): ?\DateTimeInterface {
         return $this->time;
     }
 
     // Setter for time
-    public function setTime(\DateTimeInterface $time): self
-    {
+    public function setTime(\DateTimeInterface $time): self {
         $this->time = $time;
 
         return $this;
     }
 
     // Getter for user
-    public function getUser(): ?User
-    {
+    public function getUser(): ?User {
         return $this->user;
     }
 
     // Setter for user
-    public function setUser(User $user): self
-    {
+    public function setUser(User $user): self {
         $this->user = $user;
 
         return $this;

@@ -11,19 +11,17 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Form\FormError;
 use App\Repository\AppointmentRepository;
+use App\Entity\User;
 
-class CalendarController extends AbstractController
-{   
+class CalendarController extends AbstractController {   
     private $validator;
 
-    public function __construct(ValidatorInterface $validator)
-    {
+    public function __construct(ValidatorInterface $validator) {
         $this->validator = $validator;
     }
 
     #[Route('/calendar', name: 'calendar')]
-    public function index(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function index(Request $request, EntityManagerInterface $entityManager): Response {
         // Generate the calendar data (e.g., weeks and days)
         $calendar = $this->generateCalendar(null, $entityManager);
 
@@ -33,12 +31,11 @@ class CalendarController extends AbstractController
     }
 
     #[Route('/appointment/new', name: 'appointment_new')]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function new(Request $request, EntityManagerInterface $entityManager): Response {
         $dateString = $request->query->get('date');
         $timeString = $request->query->get('time');
         $appointment = new Appointment();
-    
+
         if ($dateString && $timeString) {
             try {
                 $date = new \DateTime($dateString);
@@ -50,32 +47,43 @@ class CalendarController extends AbstractController
                 return $this->redirectToRoute('calendar');
             }
         }
-    
+
         $form = $this->createForm(AppointmentType::class, $appointment);
         $form->handleRequest($request);
-    
+
         if ($form->isSubmitted()) {
             $user = $appointment->getUser();
+
+            // Check if a user with the same email already exists
+            $existingUser = $entityManager->getRepository(User::class)->findOneBy(['email' => $user->getEmail()]);
+
+            if ($existingUser) {
+                // Update existing user details
+                $existingUser->setName($user->getName());
+                // Add any other fields you want to update
+                $appointment->setUser($existingUser); // Associate the appointment with the existing user
+            }
+
             $errors = $this->validator->validate($user);
-    
+
             if (count($errors) > 0) {
                 foreach ($errors as $error) {
                     $form->get('user')->get($error->getPropertyPath())->addError(new FormError($error->getMessage()));
                 }
             }
-    
+
             if ($form->isValid()) {
                 $entityManager->persist($appointment);
                 $entityManager->flush();
-    
+
                 // If request is an AJAX request, return a response that can be handled
                 if ($request->isXmlHttpRequest()) {
                     return new Response('success');
                 }
-    
+
                 return $this->redirectToRoute('calendar');
             }
-    
+
             // If the form has validation errors and it's an AJAX request, return the form with errors
             if (!$form->isValid() && $request->isXmlHttpRequest()) {
                 return $this->render('appointment/_form.html.twig', [
@@ -83,15 +91,14 @@ class CalendarController extends AbstractController
                 ]);
             }
         }
-    
+
         // Default response for non-AJAX requests
         return $this->render('appointment/new.html.twig', [
             'form' => $form->createView(),
         ]);
     }
-    
-    private function generateCalendar(\DateTime $currentDate = null, EntityManagerInterface $entityManager): array
-    {
+
+    private function generateCalendar(\DateTime $currentDate = null, EntityManagerInterface $entityManager): array {
         if (!$currentDate) {
             $currentDate = new \DateTime(); // Use the current date if none provided
         }
@@ -112,9 +119,13 @@ class CalendarController extends AbstractController
         // Prepare booked slots for quick lookup
         $bookedSlots = [];
         foreach ($appointments as $appointment) {
+            $user = $appointment->getUser();
             $bookedSlots[$appointment->getDate()->format('Y-m-d')][$appointment->getTime()->format('H:i')] = [
                 'isBooked' => true,
-                'user' => $appointment->getUser(), // Include user data
+                'user' => $user ? [
+                    'name' => $user->getName(),
+                    'email' => $user->getEmail(),
+                ] : null, // Ensure user data is included
                 'appointmentId' => $appointment->getId(), // Include appointment ID
             ];
         }
@@ -157,8 +168,7 @@ class CalendarController extends AbstractController
     }
 
     #[Route('/appointment/delete/{id}', name: 'appointment_delete', methods: ['DELETE'])]
-    public function delete(int $id, AppointmentRepository $appointmentRepository, EntityManagerInterface $entityManager, Request $request): Response
-    {
+    public function delete(int $id, AppointmentRepository $appointmentRepository, EntityManagerInterface $entityManager, Request $request): Response {
         $appointment = $appointmentRepository->find($id);
 
         if (!$appointment) {
