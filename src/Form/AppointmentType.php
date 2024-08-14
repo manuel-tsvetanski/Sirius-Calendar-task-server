@@ -9,10 +9,8 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use App\Form\UserType;
 
-class AppointmentType extends AbstractType
-{
-    public function buildForm(FormBuilderInterface $builder, array $options)
-    {
+class AppointmentType extends AbstractType {
+    public function buildForm(FormBuilderInterface $builder, array $options) {
         $builder
             ->add('date', DateType::class, [
                 'widget' => 'single_text',
@@ -27,8 +25,7 @@ class AppointmentType extends AbstractType
             ->add('user', UserType::class);
     }
 
-    public function configureOptions(OptionsResolver $resolver)
-    {
+    public function configureOptions(OptionsResolver $resolver) {
         $resolver->setDefaults([
             'data_class' => Appointment::class,
         ]);
