@@ -1,4 +1,5 @@
 <?php
+// src/Form/UserType.php
 
 namespace App\Form;
 
@@ -15,9 +16,27 @@ class UserType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('name', TextType::class)
-            ->add('email', EmailType::class)
-            ->add('phone', TelType::class);
+            ->add('name', TextType::class, [
+                'label' => 'Name',
+                'attr' => [
+                    'placeholder' => 'Enter your name',
+                    'class' => 'form-control',
+                ],
+            ])
+            ->add('email', EmailType::class, [
+                'label' => 'Email',
+                'attr' => [
+                    'placeholder' => 'Enter your email address',
+                    'class' => 'form-control',
+                ],
+            ])
+            ->add('phone', TelType::class, [
+                'label' => 'Phone',
+                'attr' => [
+                    'placeholder' => 'Enter your phone number',
+                    'class' => 'form-control',
+                ],
+            ]);
     }
 
     public function configureOptions(OptionsResolver $resolver)

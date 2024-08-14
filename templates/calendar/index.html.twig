@@ -6,54 +6,144 @@
     <h2>Select a Day and Time for Your Appointment</h2>
 
     <div id="calendar"></div>
+
+    <!-- Modal for event details or booking form -->
+    <div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventDetailsModalLabel">Event Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modalEventDetailsBody">
+                    <!-- Event details or booking form will be dynamically inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block javascripts %}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var calendarEl = document.getElementById('calendar');
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
 
-            var eventsArray = [
-                {% for day in calendar %}
-                    {% for slot in day.timeSlots %}
-                        {
-                            title: '{{ slot.available ? "Available" : "Booked" }}',
-                            start: '{{ slot.time|date("Y-m-d\\TH:i:s") }}',  // Correct date format
-                            url: '{{ slot.available ? path('appointment_new', { date: day.date|date('Y-m-d'), time: slot.time|date('H:i') })|raw : "#" }}',
-                            color: '{{ slot.available ? "green" : "red" }}',
-                            editable: false,
-                            durationEditable: false
-                        }{% if not loop.last %},{% endif %}
-                    {% endfor %}
-                    {% if not loop.last %},{% endif %}
-                {% endfor %}
-            ];
-
-            console.log(eventsArray); // Debugging: Check the final array
-
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'timeGridWeek',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'timeGridDay,timeGridWeek,dayGridMonth'
-                },
-                timeZone: 'local',
-                events: eventsArray,
-                slotDuration: '01:00:00', // Each slot represents 1 hour
-                allDaySlot: false, // Disable the all-day slot
-                selectable: true, // Allow selecting time slots
-                eventClick: function(info) {
-                    console.log("Event clicked:", info.event); // Debugging line
-                    if (info.event.url) {
-                        console.log("Navigating to:", info.event.url); // Debugging line
-                        window.location.href = info.event.url;
+    var eventsArray = [
+        {% for day in calendar %}
+            {% for slot in day.timeSlots %}
+                {
+                    title: '{{ slot.available ? "Available" : "Booked" }}',
+                    start: '{{ slot.time|date("Y-m-d\\TH:i:s") }}',
+                    url: '{{ slot.available ? path('appointment_new', { date: day.date|date('Y-m-d'), time: slot.time|date('H:i') })|e('js') : "#" }}',
+                    color: '{{ slot.available ? "green" : "red" }}',
+                    editable: false,
+                    durationEditable: false,
+                    extendedProps: {
+                        user: {
+                            name: "{{ slot.user ? slot.user.name|e('js') : '' }}",
+                            email: "{{ slot.user ? slot.user.email|e('js') : '' }}"
+                        }
                     }
-                    info.jsEvent.preventDefault(); // Prevent default behavior
                 }
-            });
+            {% if not loop.last %},{% endif %}
+            {% endfor %}
+            {% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
 
-            calendar.render();
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'timeGridDay,timeGridWeek,dayGridMonth'
+        },
+        timeZone: 'local',
+        events: eventsArray,
+        slotDuration: '01:00:00',
+        allDaySlot: false,
+        selectable: true,
+        eventClick: function(info) {
+            var modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+            var modalBody = document.getElementById('modalEventDetailsBody');
+
+            if (info.event.url === '#') {
+                var user = info.event.extendedProps.user;
+                var userInfo = user ? `<p><strong>Name:</strong> ${user.name}</p><p><strong>Email:</strong> ${user.email}</p>` : '<p>No user details available</p>';
+
+                modalBody.innerHTML = `
+                    <p><strong>Event:</strong> ${info.event.title}</p>
+                    <p><strong>Start:</strong> ${info.event.start.toLocaleString()}</p>
+                    ${userInfo}
+                `;
+            } else {
+                loadFormIntoModal(info.event.url, modal, modalBody);
+            }
+
+            modal.show();
+            info.jsEvent.preventDefault();
+        }
+    });
+
+    calendar.render();
+
+    function loadFormIntoModal(url, modal, modalBody) {
+        fetch(url)
+            .then(response => response.text())
+            .then(html => {
+                modalBody.innerHTML = html;
+                attachFormSubmitHandler(modalBody, modal, url); // Pass the URL to ensure correct form action
+            })
+            .catch(err => {
+                modalBody.innerHTML = '<p>Error loading form. Please try again later.</p>';
+            });
+    }
+
+    function attachFormSubmitHandler(modalBody, modal, url) {
+        var form = modalBody.querySelector('form');
+        if (!form) return; // No form found, nothing to do
+
+        form.action = url; // Ensure the form action remains consistent
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var formData = new FormData(form);
+
+            fetch(form.action, {
+                method: form.method,
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.ok && response.redirected) {
+                    return response.text().then(data => {
+                        if (data === 'success') {
+                            location.reload();
+                        }
+                    });
+                }
+                return response.text();
+            })
+            .then(data => {
+                if (data === 'success') {
+                    location.reload();
+                } else {
+                    modalBody.innerHTML = data;
+                    if (modalBody.querySelector('.form-error')) {
+                        // Validation errors present, reattach the submit handler
+                        attachFormSubmitHandler(modalBody, modal, url);
+                    }
+                }
+            })
+            .catch(err => {
+                modalBody.innerHTML = '<p>Error submitting form. Please try again later.</p>';
+            });
         });
+    }
+});
     </script>
 {% endblock %}
